@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/CHANGE_ME/Practise.git
+    repoURL: https://github.com/B0TL0F/Practise.git
     targetRevision: main
     path: k8s/overlays/eks
   destination:

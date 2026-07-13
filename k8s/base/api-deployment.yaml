@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: api
-          image: ghcr.io/CHANGE_ME/practise-api:latest
+          image: ghcr.io/b0tl0f/practise-api:latest
           ports:
             - containerPort: 3000
           env:

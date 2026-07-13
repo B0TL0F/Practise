@@ -48,7 +48,7 @@ cd apps/ui && npm install && npm run dev
 
 ### 2. CI
 
-Fork/push this repo to GitHub — the workflow at `.github/workflows/ci.yml` runs automatically. Update the image references in `k8s/base/*-deployment.yaml` and `argocd/application-*.yaml` from `ghcr.io/CHANGE_ME/...` to your GitHub username/repo.
+Fork/push this repo to GitHub — the workflow at `.github/workflows/ci.yml` runs automatically. Update the image references in `k8s/base/*-deployment.yaml` and `argocd/application-*.yaml` from `ghcr.io/b0tl0f/...` to your GitHub username/repo.
 
 ### 3. Local Kubernetes (KIND)
 

@@ -5,9 +5,9 @@ resources:
   - ../../base
   - ingress.yaml
 images:
-  - name: ghcr.io/CHANGE_ME/practise-api
-    newName: ghcr.io/CHANGE_ME/practise-api
+  - name: ghcr.io/b0tl0f/practise-api
+    newName: ghcr.io/b0tl0f/practise-api
     newTag: latest
-  - name: ghcr.io/CHANGE_ME/practise-ui
-    newName: ghcr.io/CHANGE_ME/practise-ui
+  - name: ghcr.io/b0tl0f/practise-ui
+    newName: ghcr.io/b0tl0f/practise-ui
     newTag: latest
