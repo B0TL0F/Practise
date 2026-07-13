@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.log
+
+# terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/tfplan
+terraform/.terraform.lock.hcl
