@@ -3,23 +3,38 @@ on:
     push:
         branches:
         - main
-        paths-ignore:
-        - '.github/workflows/**'
-    pull_request:
 
 permissions:
     contents: read
     id-token: write
-    actions: write
 
 jobs:
     build:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v3
-            - uses: actions/setup-node@v3
+            - name: Checkout
+              uses: actions/checkout@v6.1.0
               with:
-                  node-version: 20
-                  cache: 'yarn'
-            - run: yarn install --frozen-lockfile
-            - run: yarn build
+                persist-credentials: false
+            - name: Setup Node.js environment
+              uses: actions/setup-node@v7.1.0
+              with:
+                node-version: 24.x
+            - name: Azure Login
+              uses: Azure/login@v3.0.2
+              with:
+                  client-id: ${{secrets.AZURE_CLIENT_ID}}
+                  tenant-id: ${{secrets.AZURE_TENANT_ID}}
+                  subscription-id: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+            - name: Login to ACR
+              env:
+                ACR_NAME: ${{secrets.ACR_NAME}}
+              run: az acr login --name "$ACR_NAME"
+            - name: Build to ACR
+              env:
+                ACR_LOGIN_SERVER: ${{secrets.ACR_LOGIN_SERVER}}
+              run: docker build -f services/catalog/Dockerfile -t "$ACR_LOGIN_SERVER/catalog:$GITHUB_SHA" .
+            - name: Push to ACR
+              env:
+                ACR_LOGIN_SERVER: ${{secrets.ACR_LOGIN_SERVER}}
+              run: docker push "$ACR_LOGIN_SERVER/catalog:$GITHUB_SHA"
