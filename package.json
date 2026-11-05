@@ -1,0 +1,13 @@
+{
+  "name": "pocket-shop",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "ui": "node ui/server.mjs",
+    "catalog": "node services/catalog/server.mjs",
+    "orders": "node services/orders/server.mjs",
+    "test": "node --test tests/*.test.mjs"
+  }
+}

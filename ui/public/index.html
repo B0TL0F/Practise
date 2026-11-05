@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Pocket shop · Small things, good days</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/config.js" defer></script>
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header><a class="brand" href="/">pocket<span>shop</span><i aria-hidden="true">✳</i></a><span class="tagline">A few good everyday things.</span></header>
+  <main>
+    <div class="intro"><p class="eyebrow">THE EVERYDAY COLLECTION</p><h1>Small things.<br>Good days.</h1><p>For your desk, your bag, and the moments in between.</p></div>
+    <div class="layout">
+      <section aria-labelledby="collection-title"><div class="section-title"><h2 id="collection-title">The collection</h2><span>Made for everyday</span></div><p id="catalog-message" role="status">Loading the collection…</p><div id="products" class="products"></div><button id="reload" class="secondary" type="button">Refresh collection</button></section>
+      <aside aria-labelledby="bag-title"><div class="section-title"><h2 id="bag-title">Your bag</h2><span id="bag-count">0 items</span></div><div id="cart"></div><div class="total"><span>Total</span><strong id="total">₹0</strong></div><form id="checkout"><label for="customer">Your name</label><input id="customer" name="customer" required maxlength="80" autocomplete="name" placeholder="e.g. Shubham"><button id="place-order" type="submit" disabled>Place order <span aria-hidden="true">↗</span></button><p class="hint">Practice store. No payment or shipping.</p></form><p id="checkout-message" role="status" aria-live="polite"></p></aside>
+    </div>
+    <section class="history" aria-labelledby="orders-title"><div class="section-title"><h2 id="orders-title">Recent orders</h2><button id="refresh-orders" type="button" class="secondary">Refresh orders</button></div><p id="orders-message" role="status"></p><div id="orders"></div></section>
+  </main>
+  <footer><span>pocket shop</span><span>Less browsing. More good things.</span></footer>
+</body>
+</html>
