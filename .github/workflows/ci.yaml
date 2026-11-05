@@ -11,6 +11,17 @@ permissions:
 jobs:
     build:
         runs-on: ubuntu-latest
+        strategy:
+          fail-fast: false
+          matrix:
+            include:
+              - component: ui
+                dockerfile: ui/Dockerfile
+              - component: catalog
+                dockerfile: services/catalog/Dockerfile
+              - component: orders
+                dockerfile: services/orders/Dockerfile
+          
         steps:
             - name: Checkout
               uses: actions/checkout@v6.1.0
@@ -33,8 +44,11 @@ jobs:
             - name: Build to ACR
               env:
                 ACR_LOGIN_SERVER: ${{secrets.ACR_LOGIN_SERVER}}
-              run: docker build -f services/catalog/Dockerfile -t "$ACR_LOGIN_SERVER/catalog:$GITHUB_SHA" .
+                COMPONENT: ${{matrix.component}}
+                DOCKERFILE: ${{matrix.dockerfile}}
+              run: docker build -f $DOCKERFILE -t "$ACR_LOGIN_SERVER/$COMPONENT:$GITHUB_SHA" .
             - name: Push to ACR
               env:
                 ACR_LOGIN_SERVER: ${{secrets.ACR_LOGIN_SERVER}}
-              run: docker push "$ACR_LOGIN_SERVER/catalog:$GITHUB_SHA"
+                COMPONENT: ${{matrix.component}}
+              run: docker push "$ACR_LOGIN_SERVER/$COMPONENT:$GITHUB_SHA"
