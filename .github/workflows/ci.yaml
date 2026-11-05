@@ -22,7 +22,28 @@ jobs:
               - component: orders
                 dockerfile: services/orders/Dockerfile
           
+        strategy:
+          fail-fast: false
+          matrix:
+            include:
+              - component: ui
+                dockerfile: ui/Dockerfile
+              - component: catalog
+                dockerfile: services/catalog/Dockerfile
+              - component: orders
+                dockerfile: services/orders/Dockerfile
+          
         steps:
+            - name: Checkout
+              uses: actions/checkout@v6.1.0
+              with:
+                persist-credentials: false
+            - name: Setup Node.js environment
+              uses: actions/setup-node@v7.1.0
+              with:
+                node-version: 24.x
+            - name: Azure Login
+              uses: Azure/login@v3.0.2
             - name: Checkout
               uses: actions/checkout@v6.1.0
               with:
