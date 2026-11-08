@@ -23,17 +23,6 @@ jobs:
               - component: orders
                 dockerfile: services/orders/Dockerfile
           
-        strategy:
-          fail-fast: false
-          matrix:
-            include:
-              - component: ui
-                dockerfile: ui/Dockerfile
-              - component: catalog
-                dockerfile: services/catalog/Dockerfile
-              - component: orders
-                dockerfile: services/orders/Dockerfile
-          
         steps:
             - name: Checkout
               uses: actions/checkout@v6.1.0
