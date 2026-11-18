@@ -1,5 +1,5 @@
 name: Build
-#testing
+
 on:
   pull_request:
     branches:
@@ -8,26 +8,18 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        context:
+          - ./services/accounts-service
+          - ./services/payments-service
+          - ./services/transactions-service
+          - ./web-ui
     steps:
       - name: Checkout
         uses: actions/checkout@v6.1.0
 
-      - name: Build Accounts image
+      - name: Build image
         uses: docker/build-push-action@v7.4.0
         with:
-          context: ./services/accounts-service
-
-      - name: Build Payments image
-        uses: docker/build-push-action@v7.4.0
-        with:
-          context: ./services/payments-service
-
-      - name: Build Transactions image
-        uses: docker/build-push-action@v7.4.0
-        with:
-          context: ./services/transactions-service
-
-      - name: Build Web UI image
-        uses: docker/build-push-action@v7.4.0
-        with:
-          context: ./web-ui
+          context: ${{ matrix.context }}
