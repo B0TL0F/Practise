@@ -1,0 +1,74 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        context:
+          - ./services/accounts-service
+          - ./services/payments-service
+          - ./services/transactions-service
+          - ./web-ui
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.1.0
+
+      - name: Build image
+        uses: docker/build-push-action@v7.4.0
+        with:
+          context: ${{ matrix.context }}
+
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      matrix:
+        include:
+          - image: accounts-service
+            context: ./services/accounts-service
+          - image: payments-service
+            context: ./services/payments-service
+          - image: transactions-service
+            context: ./services/transactions-service
+          - image: web-ui
+            context: ./web-ui
+    env:
+      IMAGE: ${{ vars.ACR_LOGIN_SERVER }}/${{ matrix.image }}:${{ github.sha }}
+      ACR_NAME: ${{ vars.ACR_NAME }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Build image
+        uses: docker/build-push-action@v7.4.0
+        with:
+          context: ${{ matrix.context }}
+          tags: ${{ env.IMAGE }}
+          load: true
+
+      - name: Sign in to Azure
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Push image to ACR
+        run: |
+          az acr login --name "$ACR_NAME"
+          docker push "$IMAGE"

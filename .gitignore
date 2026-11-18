@@ -9,3 +9,11 @@ node_modules/
 dist/
 target/
 .DS_Store
+
+# Local Terraform state and input values
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+*.tfplan

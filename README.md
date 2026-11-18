@@ -2,7 +2,23 @@
 
 A sample banking application with a React dashboard, three Java Spring Boot services, and a PostgreSQL database. It uses synthetic demo data.
 
-This repository contains application source code, tests, build manifests, and Dockerfiles. CI/CD pipelines, infrastructure provisioning, deployment manifests, and environment setup scripts have been removed. Azure and PC infrastructure will be set up separately using [the master architecture diagram](Banking%20DevOps%20Master%20Architecture%20Diagram.png) as a reference.
+## Setup checkpoint
+
+| Area | Status |
+|---|---|
+| Local lab | Ubuntu, Docker, Java 21 and Maven are set up. The single-node K3s cluster is Ready with Traefik and default local-path storage. |
+| Azure bootstrap | Basic ACR `bankingbotlofacr.azurecr.io` was created manually with the admin account disabled. The GitHub OIDC credential, registry publishing permission and GitHub Actions variables were configured. |
+| Pull request CI | The four Docker matrix builds passed. A ruleset on `main` requires PRs and passing validation checks before merging. |
+| ACR publishing | [GitHub Actions workflow](.github/workflows/ci.yaml) adds a publishing job for pushes to `main`. It uses OIDC and tags images with the full commit SHA. The first publish run still needs verification. |
+| Terraform | [Azure bootstrap configuration](infra/bootstrap/main.tf) and [import steps](infra/bootstrap/README.md) are ready to review. Formatting passed. Provider validation, imports and a live plan are pending. |
+
+## Next steps
+
+1. Merge the publishing workflow through a PR. Verify that PRs run the validation builds and that the subsequent run on `main` publishes all four images to ACR under the merge commit SHA.
+2. Configure pull-only registry access for K3s. Deploy PostgreSQL, the three APIs and the web UI to DEV, configure Traefik routes and run a smoke test.
+3. Add image scanning before publishing, deployment automation and a PROD approval step. Add monitoring after DEV is working.
+4. Build the planned Azure networking and private registry access in stages. Confirm the cost and verify a network path for CI and K3s before disabling public ACR access.
+5. Import the existing Azure bootstrap resources into Terraform and reconcile the plan until it proposes zero changes. Document and adopt later Azure resources once their manual setup has been verified.
 
 ## Application components
 
