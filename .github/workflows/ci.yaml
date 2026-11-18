@@ -1,0 +1,33 @@
+name: Build
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.1.0
+
+      - name: Build Accounts image
+        uses: docker/build-push-action@v7.4.0
+        with:
+          context: ./services/accounts-service
+
+      - name: Build Payments image
+        uses: docker/build-push-action@v7.4.0
+        with:
+          context: ./services/payments-service
+
+      - name: Build Transactions image
+        uses: docker/build-push-action@v7.4.0
+        with:
+          context: ./services/transactions-service
+
+      - name: Build Web UI image
+        uses: docker/build-push-action@v7.4.0
+        with:
+          context: ./web-ui
