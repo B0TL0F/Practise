@@ -6,19 +6,19 @@ A sample banking application with a React dashboard, three Java Spring Boot serv
 
 | Area | Status |
 |---|---|
-| Local lab | Ubuntu, Docker, Java 21 and Maven are set up. The single-node K3s cluster is Ready with Traefik and default local-path storage. |
-| Azure bootstrap | Basic ACR `bankingbotlofacr.azurecr.io` was created manually with the admin account disabled. The GitHub OIDC credential, registry publishing permission and GitHub Actions variables were configured. |
+| Local lab | The Ubuntu lab was previously set up with Docker, Java 21, Maven, and single-node K3s with Traefik and local-path storage. Recheck cluster readiness from the lab before deploying. |
+| Azure bootstrap | Terraform recreated the resource group, Basic ACR `bankingbotlofacr.azurecr.io` with the admin account disabled, Entra app and service principal, GitHub OIDC credential, and registry-scoped `AcrPush` assignment. |
 | Pull request CI | The four Docker matrix builds passed. A ruleset on `main` requires PRs and passing validation checks before merging. |
-| ACR publishing | [GitHub Actions workflow](.github/workflows/ci.yaml) adds a publishing job for pushes to `main`. It uses OIDC and tags images with the full commit SHA. The first publish run still needs verification. |
-| Terraform | [Azure bootstrap configuration](infra/bootstrap/main.tf) and [import steps](infra/bootstrap/README.md) are ready to review. Formatting passed. Provider validation, imports and a live plan are pending. |
+| ACR publishing | The repository variables match the Terraform outputs. The accounts image was verified in the recreated ACR. The [publishing run](https://github.com/B0TL0F/Practise/actions/runs/44390969912) failed during the payments image build. The remaining images still need verification. |
+| Terraform | The [bootstrap configuration](infra/bootstrap/main.tf) applied six creations, and a fresh plan showed zero changes. The [bootstrap runbook](infra/bootstrap/README.md) covers fresh setup and adoption. |
+| K3s DEV | The namespace, PostgreSQL, app workloads and Services, and Traefik Ingress are defined in `deploy/k3s/dev`. Live deployment and smoke tests are pending. |
 
 ## Next steps
 
-1. Merge the publishing workflow through a PR. Verify that PRs run the validation builds and that the subsequent run on `main` publishes all four images to ACR under the merge commit SHA.
-2. Configure pull-only registry access for K3s. Deploy PostgreSQL, the three APIs and the web UI to DEV, configure Traefik routes and run a smoke test.
+1. Complete the publish and verify all four tags under the same full commit SHA in ACR. The payments build hit a Maven Central rate limit while resolving its Spring Boot parent POM.
+2. On the K3s lab, apply the DEV namespace and create the `acr-pull` and `postgres-auth` Secrets. Apply the DEV manifests and smoke-test the dashboard and API routes using `ledgerlab.test` as the HTTP host.
 3. Add image scanning before publishing, deployment automation and a PROD approval step. Add monitoring after DEV is working.
 4. Build the planned Azure networking and private registry access in stages. Confirm the cost and verify a network path for CI and K3s before disabling public ACR access.
-5. Import the existing Azure bootstrap resources into Terraform and reconcile the plan until it proposes zero changes. Document and adopt later Azure resources once their manual setup has been verified.
 
 ## Application components
 
@@ -59,7 +59,7 @@ The payments service requires PostgreSQL and uses these environment variables:
 
 The transactions service uses `PAYMENTS_URL`, defaulting to `http://payments-service:8080`.
 
-The frontend calls relative `/api` routes. Its Nginx configuration serves static assets only, so the future environment must route API requests to the matching backend services. The Vite development server currently forwards `/api` to `http://127.0.0.1:8088`; provide an API gateway at that address or update the proxy for your local environment.
+The frontend calls relative `/api` routes. The planned K3s DEV Ingress will route those requests to the matching backend services and send dashboard requests to Nginx. The Vite development server forwards `/api` to `http://127.0.0.1:8088`. Provide an API gateway at that address or update the proxy for local development.
 
 The payments schema is in `services/payments-service/src/main/resources/schema.sql`.
 

@@ -1,6 +1,23 @@
 # Azure bootstrap
 
-This configuration describes the manually created Azure resource group, Basic ACR, Entra app registration and service principal, GitHub OIDC credential, and registry-scoped publisher role. The output lists the values already entered as GitHub Actions variables.
+This configuration manages the Azure resource group, Basic ACR, Entra app registration and service principal, GitHub OIDC credential, and registry-scoped publisher role. Its output supplies the GitHub Actions repository variables.
+
+## Create from scratch
+
+Use an Azure CLI account with access to the target subscription and permission to create Entra applications and registry role assignments. Select the subscription with `az account set` and set `subscription_id`, `tenant_id`, and `github_oidc_subject` in an ignored local `terraform.tfvars` file. For B0TL0F/Practise, the previously configured subject was `repo:B0TL0F@121419078/Practise@1463216847:ref:refs/heads/main`. Use the subject emitted by the target repository if it differs. The subscription must have the `Microsoft.ContainerRegistry` resource provider registered.
+
+From this directory, run:
+
+```sh
+terraform init
+terraform plan -out=recreate.tfplan
+terraform apply recreate.tfplan
+terraform output -json github_actions_variables
+```
+
+For an empty environment, the plan should show six additions and zero changes or deletions. After applying, sync the output values to GitHub under **Settings → Secrets and variables → Actions → Variables**. A recreated Entra application has a new `AZURE_CLIENT_ID`. Rerun a push-to-main publishing workflow and verify all four SHA-tagged images in the recreated registry before deploying DEV.
+
+## Adopt an existing bootstrap
 
 Use the existing subscription and tenant IDs. Confirm the resource group name and region in the portal. The configuration assumes the group and registry share a region. Set `acr_permissions_mode` to `LegacyRegistryPermissions` for RBAC Registry Permissions or `AbacRepositoryPermissions` for RBAC + ABAC. Copy the exact Entra credential subject into `github_oidc_subject`, including any numeric IDs. Confirm the app and credential names match the portal.
 
