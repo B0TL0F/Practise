@@ -42,7 +42,7 @@ variable "acr_permissions_mode" {
 }
 
 variable "github_oidc_subject" {
-  description = "Exact subject shown on the existing Entra federated credential."
+  description = "Exact GitHub Actions OIDC subject for pushes to the publishing branch."
   type        = string
 }
 

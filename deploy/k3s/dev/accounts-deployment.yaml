@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: accounts-service
+  namespace: ledgerlab-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: accounts-service
+  template:
+    metadata:
+      labels:
+        # The Deployment selector and the accounts Service use this label.
+        app: accounts-service
+    spec:
+      # Create this Secret in ledgerlab-dev so Kubernetes can pull from ACR.
+      imagePullSecrets:
+        - name: acr-pull
+      containers:
+        - name: accounts-service
+          # Pin the image to the commit SHA verified in ACR.
+          image: bankingbotlofacr.azurecr.io/accounts-service:ecdeb3f8a423d0397af6e0dc06d4718d63de3813
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            # The pod can receive traffic once Spring Boot reports Ready.
+            httpGet:
+              path: /actuator/health/readiness
+              port: http

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: accounts-service
+  namespace: ledgerlab-dev
+spec:
+  # Keep the Service reachable inside the cluster.
+  type: ClusterIP
+  selector:
+    # Match the pod label in accounts-deployment.yaml.
+    app: accounts-service
+  ports:
+    - name: http
+      # Other pods connect to the Service on port 8080.
+      port: 8080
+      # Forward to the container port named http in the Deployment.
+      targetPort: http

@@ -1,0 +1,41 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ledgerlab
+  namespace: ledgerlab-dev
+spec:
+  ingressClassName: traefik
+  rules:
+    # Use a dedicated host so this route can coexist with other lab apps.
+    - host: ledgerlab.test
+      http:
+        paths:
+          # Preserve the /api prefixes expected by the Spring controllers.
+          - path: /api/accounts
+            pathType: Prefix
+            backend:
+              service:
+                name: accounts-service
+                port:
+                  name: http
+          - path: /api/payments
+            pathType: Prefix
+            backend:
+              service:
+                name: payments-service
+                port:
+                  name: http
+          - path: /api/transactions
+            pathType: Prefix
+            backend:
+              service:
+                name: transactions-service
+                port:
+                  name: http
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-ui
+                port:
+                  name: http

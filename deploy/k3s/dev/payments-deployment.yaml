@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payments-service
+  namespace: ledgerlab-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payments-service
+  template:
+    metadata:
+      labels:
+        app: payments-service
+    spec:
+      # Authenticate to ACR with the namespace's pull-only credentials.
+      imagePullSecrets:
+        - name: acr-pull
+      containers:
+        - name: payments-service
+          # Verify this commit's image tag exists in ACR before rollout.
+          image: bankingbotlofacr.azurecr.io/payments-service:ecdeb3f8a423d0397af6e0dc06d4718d63de3813
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: DB_URL
+              value: jdbc:postgresql://postgres:5432/bankinglab
+            - name: DB_USER
+              value: bankinglab
+            # Share the PostgreSQL password with the StatefulSet.
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-auth
+                  key: password
+            - name: ACCOUNTS_URL
+              value: http://accounts-service:8080
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
