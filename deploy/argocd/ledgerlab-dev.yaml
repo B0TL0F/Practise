@@ -1,0 +1,26 @@
+# Tells Argo CD to keep the ledgerlab-dev namespace in sync with deploy/k3s/dev on main.
+# Apply once with kubectl; after that, Argo CD follows git.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ledgerlab-dev
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/B0TL0F/Practise.git
+    targetRevision: main
+    path: deploy/k3s/dev
+  destination:
+    # The cluster Argo CD itself runs in.
+    server: https://kubernetes.default.svc
+    namespace: ledgerlab-dev
+  syncPolicy:
+    automated:
+      # Delete cluster resources that are removed from git.
+      prune: true
+      # Revert manual changes made directly in the cluster.
+      selfHeal: true
+    syncOptions:
+      # Server-side apply avoids false diffs on fields the External Secrets webhook fills in.
+      - ServerSideApply=true
