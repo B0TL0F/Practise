@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+    # Tag-bump merges only touch deploy/, so they must not trigger another publish.
+    paths-ignore:
+      - deploy/**
   pull_request:
     branches:
       - main
@@ -73,3 +76,41 @@ jobs:
         run: |
           az acr login --name "$ACR_NAME"
           docker push "$IMAGE"
+
+  update-manifests:
+    # Open a PR that points the DEV manifests at the images just published.
+    needs: publish
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    env:
+      SHA: ${{ github.sha }}
+      # A token (not GITHUB_TOKEN) so the PR triggers the required checks.
+      GH_TOKEN: ${{ secrets.DEPLOY_PR_TOKEN }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v6.1.0
+        with:
+          ref: main
+          token: ${{ secrets.DEPLOY_PR_TOKEN }}
+
+      - name: Set image tags
+        run: |
+          sed -i -E '/image:/s#:[0-9a-f]{40}$#:'"${SHA}"'#' deploy/k3s/dev/*-deployment.yaml
+          git diff --stat
+
+      - name: Open pull request
+        run: |
+          if git diff --quiet; then
+            echo "Manifests already use ${SHA}; nothing to do."
+            exit 0
+          fi
+          BRANCH="deploy/dev-${SHA::7}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git commit -am "Deploy ${SHA::7} to DEV"
+          git push origin "$BRANCH"
+          gh pr create --base main --head "$BRANCH" \
+            --title "Deploy ${SHA::7} to DEV" \
+            --body "Automated tag bump. Images for ${SHA} are in ACR. Merging this makes Argo CD roll out the new version to ledgerlab-dev."
