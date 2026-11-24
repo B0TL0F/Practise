@@ -19,7 +19,7 @@ spec:
       containers:
         - name: web-ui
           # Verify this commit's image tag exists in ACR before rollout.
-          image: bankingshubham01.azurecr.io/web-ui:3ad4f2adc3eee745cf3bcc51cc710fd6fe639ac3
+          image: bankingshubham01.azurecr.io/web-ui:415ac27f014f21dbb35bb840da5df5ef118430e0
           ports:
             - name: http
               containerPort: 80
