@@ -1,0 +1,53 @@
+# Helm values for kube-prometheus-stack (Prometheus, Alertmanager, Grafana, exporters).
+# Install:
+#   helm install monitoring prometheus-community/kube-prometheus-stack --version 93.9.0 \
+#     -n monitoring --create-namespace -f deploy/monitoring/values.yaml
+
+grafana:
+  defaultDashboardsTimezone: Asia/Kolkata
+  admin:
+    # Created from Azure Key Vault by externalsecret-grafana.yaml.
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { memory: 384Mi }
+
+prometheus:
+  prometheusSpec:
+    retention: 7d
+    # Also pick up ServiceMonitors that are not created by this Helm release.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    resources:
+      requests: { cpu: 100m, memory: 512Mi }
+      limits: { memory: 1Gi }
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests: { cpu: 10m, memory: 32Mi }
+      limits: { memory: 128Mi }
+
+# K3s runs these inside one process, so Prometheus cannot scrape them the way it
+# does on kubeadm. Turn the scrapers and their alerts off to avoid permanent false alarms.
+kubeEtcd: { enabled: false }
+kubeControllerManager: { enabled: false }
+kubeScheduler: { enabled: false }
+kubeProxy: { enabled: false }
+defaultRules:
+  rules:
+    etcd: false
+    kubeControllerManager: false
+    kubeSchedulerAlerting: false
+    kubeSchedulerRecording: false
+    kubeProxy: false
