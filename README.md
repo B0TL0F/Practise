@@ -4,7 +4,7 @@ A sample banking application with a React dashboard, three Java Spring Boot serv
 
 ## Checkpoint (2026-11-25)
 
-**The environment was rebuilt from the runbook and verified end to end on 2026-11-25: Argo CD is Synced and Healthy, all pods are Running, the four routes return HTTP 200, and the full release flow (merge, publish, bot pull request, merge, rollout) works. Monitoring is installed. The only remaining work is the next steps below.** [docs/azure-vm-setup.md](docs/azure-vm-setup.md) rebuilds the environment on any machine.
+**The environment was rebuilt from the runbook and verified end to end on 2026-11-25: Argo CD was Synced and Healthy, all pods ran, the four routes returned HTTP 200, the full release flow worked, and monitoring was installed. The Azure resources were then deleted again to save cost and must be recreated.** Follow [docs/azure-vm-setup.md](docs/azure-vm-setup.md) rebuilds the environment on any machine.
 
 | Area | State at the checkpoint |
 |---|---|
@@ -13,10 +13,10 @@ A sample banking application with a React dashboard, three Java Spring Boot serv
 | K3s DEV manifests | `deploy/k3s/dev` deployed and healthy: all pods ran and `/` plus the three `/api/*` routes returned HTTP 200. |
 | Secrets | `deploy/k3s/dev/secretstore.yaml` and `externalsecrets.yaml` create `postgres-auth` and `acr-pull` from Azure Key Vault through the External Secrets Operator and the VM's managed identity. No secret values are in git. |
 | GitOps | `deploy/argocd/ledgerlab-dev.yaml` is an Argo CD Application with automated sync, prune, and self-heal. A full release was proven: merge, publish, bot pull request, merge, Argo CD rollout. |
-| Monitoring | `kube-prometheus-stack` `93.9.0` is installed in namespace `monitoring` (release `monitoring`) and all pods run. Grafana is reached through an SSH tunnel and `kubectl port-forward`. The Java services do not expose Prometheus metrics yet. |
-| Azure | **Running and billing.** `rg-banking` holds the registry and VM `vm-ledgerlab`. The VM firewall allows only the IP that was current at setup, so update the two NSG rules if your address changes. |
-| GitHub | The five Azure repository variables and the `DEPLOY_PR_TOKEN` secret are set again. `AZURE_CLIENT_ID` is the new app's ID. The old personal access token should be revoked in GitHub settings. |
-| Key Vault | `kv-ledgerlab-shubham` was recovered and is in use. The ACR pull login was regenerated for the new registry. |
+| Monitoring | Installed and healthy before teardown (`kube-prometheus-stack` `93.9.0`, release `monitoring`). It must be reinstalled after a rebuild (runbook step 10). The Java services do not expose Prometheus metrics yet. |
+| Azure | **Deleted.** Nothing is running or billing. Names to reuse are listed below. |
+| GitHub | The five Azure repository variables and the `DEPLOY_PR_TOKEN` secret were removed. The `DEPLOY_PR_TOKEN` personal access token should be revoked in GitHub settings. |
+| Key Vault | `kv-ledgerlab-shubham` is **soft-deleted with purge protection** until about 2027-02-22. **Recover it, do not create it.** Its secrets come back, but replace the ACR login. |
 | Terraform | `infra/bootstrap` is the earlier Terraform approach and is **not used** by the current manual setup. |
 
 ## How it fits together
@@ -65,7 +65,7 @@ Full commands are in [docs/azure-vm-setup.md](docs/azure-vm-setup.md). The order
 |---|---|
 | Resource group, region | `rg-banking`, `centralindia` |
 | Registry | `bankingshubham01` (Basic, admin disabled) |
-| Key Vault | `kv-ledgerlab-shubham` was recovered and is in use. The ACR pull login was regenerated for the new registry. |
+| Key Vault | `kv-ledgerlab-shubham` is **soft-deleted with purge protection** until about 2027-02-22. **Recover it, do not create it.** Its secrets come back, but replace the ACR login. |
 | Key Vault secrets | `postgres-password`, `acr-pull-username`, `acr-pull-password`, `grafana-admin-password` |
 | VM | `vm-ledgerlab`, Ubuntu 24.04, `Standard_B2s_v2`, 64 GB Standard SSD, user `azureuser`, key login only |
 | GitHub app (push) | `github-banking-ci`, credential subject `repo:B0TL0F@121419078/Practise@1463216847:ref:refs/heads/main` |
@@ -87,11 +87,12 @@ Full commands are in [docs/azure-vm-setup.md](docs/azure-vm-setup.md). The order
 
 ## Next steps
 
-1. Expose application metrics. The Java services only publish `health` and `info`. Add `micrometer-registry-prometheus`, expose the `prometheus` endpoint, and add a `ServiceMonitor`.
-2. Add a post-deploy smoke test and Argo CD notifications for `Degraded` applications.
-3. Add automatic rollback with monitoring plus Argo Rollouts.
-4. Add image scanning before publishing and a PROD approval step.
-5. Replace the personal access token with a GitHub App, and restrict Key Vault network access.
+1. Rebuild the environment from the runbook, then reinstall monitoring.
+2. Expose application metrics. The Java services only publish `health` and `info`. Add `micrometer-registry-prometheus`, expose the `prometheus` endpoint, and add a `ServiceMonitor`.
+3. Add a post-deploy smoke test and Argo CD notifications for `Degraded` applications.
+4. Add automatic rollback with monitoring plus Argo Rollouts.
+5. Add image scanning before publishing and a PROD approval step.
+6. Replace the personal access token with a GitHub App, and restrict Key Vault network access.
 
 ## Application components
 
