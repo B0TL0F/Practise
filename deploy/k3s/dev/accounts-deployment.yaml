@@ -20,7 +20,7 @@ spec:
       containers:
         - name: accounts-service
           # Pin the image to the commit SHA verified in ACR.
-          image: bankingshubham01.azurecr.io/accounts-service:30ffa3619d106388a3d9ec9e28e29e6e741ce43b
+          image: bankingshubham01.azurecr.io/accounts-service:9d2e29091d30e8ec4f6e2594d9dd55bb0cdc6d26
           ports:
             - name: http
               containerPort: 8080
