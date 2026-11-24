@@ -19,7 +19,7 @@ spec:
       containers:
         - name: transactions-service
           # Verify this commit's image tag exists in ACR before rollout.
-          image: bankingbotlofacr.azurecr.io/transactions-service:ecdeb3f8a423d0397af6e0dc06d4718d63de3813
+          image: bankingshubham01.azurecr.io/transactions-service:3ad4f2adc3eee745cf3bcc51cc710fd6fe639ac3
           ports:
             - name: http
               containerPort: 8080

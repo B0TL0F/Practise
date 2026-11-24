@@ -4,6 +4,8 @@ kind: Kustomization
 # Combine the DEV manifests into one deployment.
 resources:
   - namespace.yaml
+  - secretstore.yaml
+  - externalsecrets.yaml
   - postgres-service.yaml
   - postgres-statefulset.yaml
   - accounts-deployment.yaml
