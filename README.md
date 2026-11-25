@@ -4,7 +4,7 @@ A sample banking application with a React dashboard, three Java Spring Boot serv
 
 ## Current state
 
-This repository is reset to a starting point: the application code, their Dockerfiles, and a pull request check that builds the four images. There is no cloud infrastructure, deployment configuration, or publish pipeline yet. Nothing is running in Azure.
+This repository is reset to a starting point: the application code and its Dockerfiles. There is no pipeline, cloud infrastructure, or deployment configuration yet. Nothing is running in Azure.
 
 A finished version of the whole setup is kept as the git tag `reference-complete`. It is for reference only. To browse it:
 
@@ -17,14 +17,7 @@ It contains the Azure setup runbook (`docs/azure-vm-setup.md`), K3s manifests, A
 
 ## Branch protection
 
-`main` is protected by a ruleset that requires a pull request and these four passing checks, which come from the `validate` job in `.github/workflows/ci.yaml`:
-
-- `validate (./services/accounts-service)`
-- `validate (./services/payments-service)`
-- `validate (./services/transactions-service)`
-- `validate (./web-ui)`
-
-If you rewrite the workflow, keep those job names or update the required checks in **Settings → Rules → Rulesets**.
+There is no CI workflow yet, and `main` currently has no ruleset. Once the delivery pipeline exists, add a ruleset in **Settings → Rules → Rulesets** that requires a pull request and the pipeline's checks, and blocks deletions and force pushes.
 
 ## Application components
 
