@@ -4,15 +4,9 @@ on:
   push:
     branches:
       - main
-    # Tag-bump merges and documentation changes must not trigger another publish.
-    paths-ignore:
-      - deploy/**
-      - docs/**
-      - "**.md"
   pull_request:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
   validate:
@@ -33,87 +27,3 @@ jobs:
         uses: docker/build-push-action@v7.4.0
         with:
           context: ${{ matrix.context }}
-
-  publish:
-    # Skip while the Azure variables are not configured, for example after a teardown.
-    if: vars.ACR_NAME != '' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      id-token: write
-    strategy:
-      matrix:
-        include:
-          - image: accounts-service
-            context: ./services/accounts-service
-          - image: payments-service
-            context: ./services/payments-service
-          - image: transactions-service
-            context: ./services/transactions-service
-          - image: web-ui
-            context: ./web-ui
-    env:
-      IMAGE: ${{ vars.ACR_LOGIN_SERVER }}/${{ matrix.image }}:${{ github.sha }}
-      ACR_NAME: ${{ vars.ACR_NAME }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6.1.0
-        with:
-          persist-credentials: false
-
-      - name: Build image
-        uses: docker/build-push-action@v7.4.0
-        with:
-          context: ${{ matrix.context }}
-          tags: ${{ env.IMAGE }}
-          load: true
-
-      - name: Sign in to Azure
-        uses: azure/login@v3
-        with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Push image to ACR
-        run: |
-          az acr login --name "$ACR_NAME"
-          docker push "$IMAGE"
-
-  update-manifests:
-    # Open a PR that points the DEV manifests at the images just published.
-    needs: publish
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-    env:
-      SHA: ${{ github.sha }}
-      # A token (not GITHUB_TOKEN) so the PR triggers the required checks.
-      GH_TOKEN: ${{ secrets.DEPLOY_PR_TOKEN }}
-    steps:
-      - name: Checkout main
-        uses: actions/checkout@v6.1.0
-        with:
-          ref: main
-          token: ${{ secrets.DEPLOY_PR_TOKEN }}
-
-      - name: Set image tags
-        run: |
-          sed -i -E '/image:/s#:[0-9a-f]{40}$#:'"${SHA}"'#' deploy/k3s/dev/*-deployment.yaml
-          git diff --stat
-
-      - name: Open pull request
-        run: |
-          if git diff --quiet; then
-            echo "Manifests already use ${SHA}; nothing to do."
-            exit 0
-          fi
-          BRANCH="deploy/dev-${SHA::7}"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b "$BRANCH"
-          git commit -am "Deploy ${SHA::7} to DEV"
-          git push origin "$BRANCH"
-          gh pr create --base main --head "$BRANCH" \
-            --title "Deploy ${SHA::7} to DEV" \
-            --body "Automated tag bump. Images for ${SHA} are in ACR. Merging this makes Argo CD roll out the new version to ledgerlab-dev."
