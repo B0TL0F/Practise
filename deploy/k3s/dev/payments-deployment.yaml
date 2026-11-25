@@ -19,7 +19,7 @@ spec:
       containers:
         - name: payments-service
           # Verify this commit's image tag exists in ACR before rollout.
-          image: bankingshubham01.azurecr.io/payments-service:d6236546c16c0a4b43e9b624c0b44fd495af8d25
+          image: bankingshubham01.azurecr.io/payments-service:b57fa0092a53afde86c3b451758f2fc1d09c4a18
           ports:
             - name: http
               containerPort: 8080
