@@ -4,7 +4,7 @@ A sample banking application with a React dashboard, three Java Spring Boot serv
 
 ## Current state
 
-This repository is a learning rebuild of a complete DevOps setup. The application code and Dockerfiles are done. The Azure infrastructure is being rebuilt step by step with Terraform on the branch `terraform-iac`, written by hand to learn it. There is no pipeline or deployment configuration yet. **Nothing is running in Azure and nothing is billing.**
+This repository is a learning rebuild of a complete DevOps setup. The application code and Dockerfiles are done. The Azure infrastructure is being rebuilt step by step with Terraform on the branch `terraform-iac`, written by hand to learn it. A first CI workflow that builds the images is in place; there is no publishing or deployment yet. **Nothing is running in Azure and nothing is billing.**
 
 A finished version of the whole setup is kept as the git tag `reference-complete`. It is for reference only. To browse it:
 
@@ -15,15 +15,16 @@ git checkout reference-complete      # read-only view; return with: git checkout
 
 It contains the Azure setup runbook (`docs/azure-vm-setup.md`), K3s manifests, Argo CD Application, Key Vault wiring, monitoring configuration, and the full CI/CD workflow.
 
-## Progress checkpoint (2026-11-25)
+## Progress checkpoint (2026-11-26)
 
 | Stage | What | State |
 |---|---|---|
-| 0 | Azure resource providers registered (`ContainerRegistry`, `Compute`, `Network`, `KeyVault`) | Done. This is a one-time setting on the subscription and survives teardown. |
-| 1 | Terraform skeleton in `infra/`: `versions.tf` (azurerm `~> 5.15`, azuread `~> 3.0`), `variables.tf`, local `terraform.tfvars` | Done and validated. |
-| 1 | Resource group `rg-banking` (`centralindia`) in `infra/main.tf` | Applied, checked for drift, then destroyed. The code is kept. |
-| 2 | Container registry (next), plus an output for its login server | **Not started. Do this next.** |
-| 3 | Entra app, GitHub OIDC credential, `AcrPush` role, and the publish workflow | Not started. |
+| 0 | Azure resource providers registered (`ContainerRegistry`, `Compute`, `Network`, `KeyVault`) | Done. A one-time setting on the subscription that survives teardown. |
+| 1 | Terraform skeleton and resource group `rg-banking` (`versions.tf`, `variables.tf`, `main.tf`) | Done. |
+| 2 | Container registry (`acr.tf`) and login server output (`outputs.tf`) | Done. |
+| 3a | GitHub passwordless login (`github.tf`): app registration, service principal, federated credential, `AcrPush` on the registry only | Done. All 6 resources were applied with no drift, then destroyed. |
+| 3b | `.github/workflows/ci.yaml`, job `validate`: builds all four images | Done. All four passed on pull request #19. |
+| 3c | `ci.yaml`, job `publish`: push the images to the registry | **Not written. Do this next.** |
 | 4 | Key Vault, pull-only identity, secrets | Not started. |
 | 5 | Network, firewall limited to your IP, VM with managed identity, vault read role | Not started. |
 | 6 | K3s, Helm, External Secrets, Argo CD on the VM | Not started. |
@@ -32,7 +33,44 @@ It contains the Azure setup runbook (`docs/azure-vm-setup.md`), K3s manifests, A
 | 9 | Monitoring with Prometheus and Grafana | Not started. |
 | 10 | Remote Terraform state in Azure Storage, Terraform in CI | Not started. |
 
-Azure is empty except for the system-made `NetworkWatcherRG`. The finished reference of stages 3 to 9 is in the git tag `reference-complete`. It was built with the Azure CLI, not Terraform, and it is a read-only reference.
+Pull request #19 (`terraform-iac` into `main`) is open. Do not merge it until `publish` is written and reviewed and the steps under "Next steps" are done. The finished reference of stages 3 to 9 is in the git tag `reference-complete`. It was built with the Azure CLI, not Terraform, and it is a read-only reference.
+
+## Next steps
+
+### 1. Write the `publish` job
+
+| Part | Requirement |
+|---|---|
+| When jobs run | `validate` runs only for pull requests. `publish` runs only for a push to `main`, or a manual run on `main`. Look up `if:` and the `github` context. |
+| Permissions | Read the repository contents, and allow the job to request an OIDC token. |
+| Matrix | Four entries, each with an image name and its folder. Look up matrix `include`. |
+| Step 1 | Check out the code. |
+| Step 2 | Build with `docker/build-push-action`, tagged `<registry address>/<image name>:<commit SHA>`, and keep the image on the runner (`load` input). |
+| Step 3 | Log in with `azure/login` using the client, tenant and subscription IDs from repository variables. |
+| Step 4 | Log in to the registry with an `az acr` command. |
+| Step 5 | `docker push` the same full image name. |
+
+Questions to be able to answer: Why tag with the commit SHA instead of `latest`? Why does the job need no password? Why must it not run for pull requests?
+
+### 2. Test it
+
+1. Review the workflow before committing.
+2. In `infra/`, run `terraform plan`, then `terraform apply`. The registry bills while it exists.
+3. Set the repository variable `AZURE_CLIENT_ID` to the new `terraform output clientidbanking` value. It changes every time the app registration is recreated.
+4. Commit, push, check that `validate` passes, and merge pull request #19. The federated credential trusts only `main`, so `publish` can only be tested there.
+5. Check that the four images are in the registry.
+
+## GitHub repository variables
+
+Set under **Settings → Secrets and variables → Actions → Variables**. No secrets are needed yet.
+
+| Variable | Source |
+|---|---|
+| `ACR_NAME` | The registry name |
+| `ACR_LOGIN_SERVER` | `terraform output acrbankingname` |
+| `AZURE_CLIENT_ID` | `terraform output clientidbanking`. Update after every fresh apply. |
+| `AZURE_TENANT_ID` | `az account show --query tenantId -o tsv` |
+| `AZURE_SUBSCRIPTION_ID` | `az account show --query id -o tsv` |
 
 ## Continue on another device
 
@@ -54,8 +92,8 @@ Azure is empty except for the system-made `NetworkWatcherRG`. The finished refer
    az provider register -n Microsoft.Network --wait
    az provider register -n Microsoft.KeyVault --wait
    ```
-5. In `infra/`, create the git-ignored `terraform.tfvars` with `subscription_id` and `tenant_id` from step 3, then run `terraform init`, `terraform validate`, and `terraform plan`. With the current code the plan should show one resource group to add.
-6. Continue with Stage 2.
+5. In `infra/`, create the git-ignored `terraform.tfvars` with `subscription_id` and `tenant_id` from step 3, then run `terraform init`, `terraform validate`, and `terraform plan`. With the current code, a fresh plan should show 6 resources to add. Creating the app registration and role assignment needs permission to register applications and assign roles.
+6. Continue with "Next steps" above.
 
 Terraform state is local and git-ignored, so each device starts with empty state. Always destroy before moving to another device, or move the state to a remote backend (Stage 10) first. Otherwise Terraform will try to create resources that already exist.
 
@@ -92,7 +130,7 @@ This project is for learning and interview practice, so the project owner writes
 
 ## Branch protection
 
-There is no CI workflow yet, and `main` currently has no ruleset. Once the delivery pipeline exists, add a ruleset in **Settings → Rules → Rulesets** that requires a pull request and the pipeline's checks, and blocks deletions and force pushes.
+`main` currently has no ruleset. Once the delivery pipeline is on `main`, add a ruleset in **Settings → Rules → Rulesets** that requires a pull request and the pipeline's checks, and blocks deletions and force pushes.
 
 ## Application components
 
